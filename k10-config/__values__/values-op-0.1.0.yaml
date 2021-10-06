@@ -1,0 +1,10 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+vsphere_user: "YWRtaW5pc3RyYXRvckBmbGV4cG9kLmxvY2Fs"
+vsphere_password: "U0FQaGFuYTIwIQ=="
+vsphere_addr: "10.10.50.100"
+sg_key: "Q2CVMW9DA1EICW4SR62B"
+sg_secret: "6owRuzyhJE9pS3reLBJDs1AB28d2omZnfryypUHb"
+sg_addr: "s3.flexpod.local:10443"
+sg_bucket: "backup"

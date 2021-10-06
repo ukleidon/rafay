@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: basyx-registry-service
+spec:
+  selector:
+    app: basyx
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basyx-registry-deployment
+  labels:
+    app: basyx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basyx
+  template:
+    metadata:
+      labels:
+        app: basyx
+    spec:
+      imagePullSecrets:
+        - name: erbenschell
+      containers:
+        - name: basyx-registry
+          image: eclipsebasyx/aas-registry:1.0.2
+          ports:
+            - containerPort: 4000
+          env:
+            - name: BaSyxRegistry_registry.backend
+              value: "MongoDB"
+            - name: BaSyxMongoDB_dbname
+              value: "admin"
+            - name: BaSyxMongoDB_dbconnectionstring
+              valueFrom:
+                secretKeyRef:
+                  name: basys-mongodb-d-admin-basys
+                  key: connectionString.standardSrv
+            - name:  BaSyxMongoDB_dbcollectionRegistry
+              value: basyxregistry

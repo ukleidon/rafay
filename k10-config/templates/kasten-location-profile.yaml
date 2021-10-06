@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storagegrid-secret-k10
+  namespace: {{ .Release.Namespace }}
+type: secrets.kanister.io/aws
+stringData:
+  aws_access_key_id: {{ .Values.sg_key }}
+  aws_secret_access_key: {{ .Values.sg_secret }}
+
+---
+apiVersion: config.kio.kasten.io/v1alpha1
+kind: Profile
+metadata:
+  name: storagegrid-profile
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: Location
+  locationSpec:
+    credential:
+      secretType: AwsAccessKey
+      secret:
+        apiVersion: v1
+        kind: secret
+        name: storagegrid-secret-k10
+        namespace: {{ .Release.Namespace }}
+    type: ObjectStore
+    objectStore:
+      name: {{ .Values.sg_bucket }}
+      endpoint: {{ .Values.sg_addr }}
+      objectStoreType: S3
+      region: us-east-1
+      skipSSLVerify: true
+

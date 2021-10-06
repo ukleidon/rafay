@@ -1,0 +1,37 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: basys-mongodb-d
+spec:
+  members: 2
+  type: ReplicaSet
+  version: "4.0.5"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: basys
+      db: admin
+      passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+        name: basys-mongodb-secret
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: userAdminAnyDatabase
+          db: admin
+        - name: readWriteAnyDatabase
+          db: admin
+      scramCredentialsSecretName: basys-scram
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
+# the user credentials will be generated from this secret
+# once the credentials are generated, this secret is no longer required
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basys-mongodb-secret
+type: Opaque
+stringData:
+  password: basys1234

@@ -1,0 +1,12 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJodHRwczovL3JlZ2lzdHJ5LmVyYmVuc2NoZWxsLmllc2UuZnJhdW5ob2Zlci5kZSI6eyJ1c2VybmFtZSI6ImNpc2NvIiwicGFzc3dvcmQiOiJRTWZlZHk4d2hKc0N2eTNqZi1GayIsImF1dGgiOiJZMmx6WTI4NlVVMW1aV1I1T0hkb1NuTkRkbmt6YW1ZdFJtcz0ifX19
+kind: Secret
+metadata:
+  name: erbenschell
+  namespace: default
+type: kubernetes.io/dockerconfigjson

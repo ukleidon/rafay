@@ -1,0 +1,8 @@
+apiVersion: snapshot.storage.k8s.io/v1beta1
+kind: VolumeSnapshotClass
+metadata:
+  name: trident-snapshotclass
+  annotations:
+    k10.kasten.io/is-snapshot-class: "true"
+driver: csi.trident.netapp.io
+deletionPolicy: Delete

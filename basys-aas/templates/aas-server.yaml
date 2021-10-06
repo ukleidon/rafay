@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: basyx-aas-service
+spec:
+  selector:
+    app: basyx-aas
+  ports:
+    - protocol: TCP
+      port: 4001
+      targetPort: 4001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basyx-aas-deployment
+  labels:
+    app: basyx-aas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basyx-aas
+  template:
+    metadata:
+      labels:
+        app: basyx-aas
+    spec:
+      imagePullSecrets:
+        - name: erbenschell
+      containers:
+        - name: basyx-aas-server
+          image: registry.erbenschell.iese.fraunhofer.de/basyx/minimalinfrastructure/aas-server:latest
+          ports:
+            - containerPort: 4001
+          env:
+          - name: BaSyxAAS_registry.path
+            value: "http://basyx-registry-service:4000/registry"
+          - name: BaSyxAAS_aas.source
+            value: "/aas/aas.aasx"
+          - name: BaSyxAAS_aas.backend
+            value: "MongoDB"
+          - name: BaSyxAAS_registry.host
+            value: "http://basyx-aas-service:4001/aasServer"
+          - name: BaSyxMongoDB_dbname
+            value: "admin"
+          - name: BaSyxMongoDB_dbconnectionstring
+            valueFrom:
+              secretKeyRef:
+                name: basys-mongodb-d-admin-basys
+                key: connectionString.standardSrv
+          - name:  BaSyxMongoDB_dbcollectionRegistry
+            value: basyxregistry
+          - name:  BaSyxMongoDB_dbcollectionAAS
+            value: basyxaas
+          - name:  BaSyxMongoDB_dbcollectionSubmodels
+            value: basyxsubmodel
+          volumeMounts:
+          - name: workdir
+            mountPath: /aas
+      # These containers are run during pod initialization
+      initContainers:
+      - name: install
+        image: archlinux
+        command: ["/bin/sh", "-c"]
+        args: ["pacman --noconfirm -Sy wget; wget 'http://oc.iese.de/index.php/s/cmodmXiIhc1PhLH/download' -O /aas/aas.aasx"]
+        volumeMounts:
+        - name: workdir
+          mountPath: "/aas"
+   #   dnsPolicy: Default
+      volumes:
+      - name: workdir
+        emptyDir: {}

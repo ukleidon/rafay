@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: basyx-mqtt-gateway-service
+spec:
+  selector:
+    app: basyx-aas
+  ports:
+    - protocol: TCP
+      port: 4002
+      targetPort: 4002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basyx-mqtt-gateway-deployment
+  labels:
+    app: basyx-aas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basyx-aas
+  template:
+    metadata:
+      labels:
+        app: basyx-aas
+    spec:
+      imagePullSecrets:
+        - name: erbenschell
+      containers:
+        - name: basyx-mqtt-gateway
+          image: registry.erbenschell.iese.fraunhofer.de/basyx/minimalinfrastructure/mqtt-gateway:latest
+          ports:
+            - containerPort: 4001
+          env:
+          - name: BaSyxAAS_registry.path
+            value: "http://basyx-registry-service:4000/registry"
+          - name: BASYX_MQTT_BROKER_ENDPOINT
+            value: "tcp://basyx-mqtt-broker-service:1883"

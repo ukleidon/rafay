@@ -1,0 +1,33 @@
+apiVersion: config.kio.kasten.io/v1alpha1
+kind: Policy
+metadata:
+  name: default-backup-policy
+  namespace: {{ .Release.Namespace }}
+spec:
+  comment: default backup policy
+  frequency: '@hourly'
+  retention:
+    hourly: 24
+    daily: 7
+  actions:
+  - action: backup
+    backupParameters:
+      filters: {}
+      profile:
+        name: storagegrid-profile
+        namespace: {{ .Release.Namespace }}
+  - action: export
+    exportParameters:
+      exportData:
+        enabled: true
+      frequency: '@hourly'
+      profile:
+        name: storagegrid-profile
+        namespace: {{ .Release.Namespace }}
+  selector:
+    matchExpressions:
+    - key: k10.kasten.io/appNamespace
+      operator: In
+      values: 
+      - default
+      - basy*

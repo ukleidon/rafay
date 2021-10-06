@@ -1,0 +1,30 @@
+# Default values for trident-ontap-nas.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+#
+# aff400-secret.yaml
+username: trident
+password: SAPhana20!
+
+# backend-tbc-ontap-nas.yaml
+# Management LIF IP address for the storage used (cluster IP on e0M)
+managementLIF: 172.28.0.68
+
+# Data LIF IP address of the storage VM used for NFS 
+dataLIF: 172.29.5.62
+
+# NAme of the SVM/vserver on the storage
+svm: trident
+
+# Name of the Storage used in Kubernetes cluster
+backendName: aff300-nas
+
+
+# storage-class-csi.yaml
+sc_name: fp-nas-csi

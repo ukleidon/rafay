@@ -1,0 +1,12 @@
+apiVersion: "v2"
+name: erbenschell-secret
+description: Erbenschell Secret for Basyx Download
+version: 0.1.0
+type: application
+appVersion: "0.1.0"
+kubeVersion: '>=1.16-0'
+keywords:
+- basyx
+- erbenschell
+maintainers:
+- name: Fraunhofer
