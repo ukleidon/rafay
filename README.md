@@ -34,7 +34,7 @@ Basys:
 
 !!! Attention !!!!
 
-value.yaml files are moved to __values__ as the value-file is specified in Rafay seperatly. 
+value.yaml files are moved to __ __values__ __ as the value-file is specified in Rafay seperatly. 
 
 For helm install use --value <value file>
   
