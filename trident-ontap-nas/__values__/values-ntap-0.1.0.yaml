@@ -17,10 +17,10 @@ password: SAPhana20!
 managementLIF: 172.28.0.149
 
 # Data LIF IP address of the storage VM used for NFS 
-dataLIF: 172.29.5.63
+dataLIF: 172.29.5.50
 
 # NAme of the SVM/vserver on the storage
-svm: trident
+svm: infra
 
 # Name of the Storage used in Kubernetes cluster
 backendName: aff300-nas
