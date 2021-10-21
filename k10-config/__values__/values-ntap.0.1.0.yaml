@@ -1,10 +1,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replicaCount: 1
-vsphere_user: "aW50ZXJzaWdodEB2c3BoZXJlLndkZjAyLTQtZG16LmxvY2Fs"
 vsphere_password: "U0FQaGFuYTIwIQ=="
-vsphere_addr: "vcsa.wdf02-4-dmz.local"
-sg_key: "Q2CVMW9DA1EICW4SR62B"
-sg_secret: "6owRuzyhJE9pS3reLBJDs1AB28d2omZnfryypUHb"
-sg_addr: "s3.dip.wdf02-4-dmz.local:20443"
-sg_bucket: "kasten"
+vsphere_user: "YWRtaW5pc3RyYXRvckB2c3BoZXJlLmxvY2Fs"
+vsphere_addr: "172.28.0.200"
+sg_key: "2J7MWBPWLJI37VJTK9Q0"
+sg_secret: "xE0EhF/Z0AYe5sOcGGqEw2LvsajxOTm7lG35gAgb"
+sg_addr: "s3.ntap-wdf.local:10443"
+sg_bucket: "k10"

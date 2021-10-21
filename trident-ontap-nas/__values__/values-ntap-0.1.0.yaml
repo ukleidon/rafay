@@ -9,15 +9,15 @@ nameOverride: ""
 fullnameOverride: ""
 #
 # aff400-secret.yaml
-username: trident
+username: admin
 password: SAPhana20!
 
 # backend-tbc-ontap-nas.yaml
 # Management LIF IP address for the storage used (cluster IP on e0M)
-managementLIF: 172.28.0.68
+managementLIF: 172.28.0.149
 
 # Data LIF IP address of the storage VM used for NFS 
-dataLIF: 172.29.5.62
+dataLIF: 172.29.5.63
 
 # NAme of the SVM/vserver on the storage
 svm: trident
