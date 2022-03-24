@@ -3,8 +3,12 @@
 {{- $service_port := .Values.service.externalPort -}}
 {{- $aggregated_api_port := .Values.service.aggregatedApiPort -}}
 {{- $postfix := default .Release.Name .Values.ingress.urlPath -}}
+{{- $colocated_services := include "k10.colocatedServices" . | fromYaml -}}
+{{- $exposed_services := include "k10.exposedServices" . | splitList " " -}}
 {{- $os_postfix := default .Release.Name .Values.route.path -}}
+{{- $main_context := . -}}
 {{- range append (include "k10.restServices" . | splitList " ") "frontend" }}
+  {{ if not (hasKey $colocated_services . ) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -14,6 +18,7 @@ metadata:
 {{ include "helm.labels" $ | indent 4 }}
     component: {{ . }}
     run: {{ . }}-svc
+{{ if or (has . $exposed_services) (eq . "frontend") }}
   annotations:
     getambassador.io/config: |
       ---
@@ -36,12 +41,35 @@ metadata:
       rewrite: /
       service: {{ . }}-svc.{{ $.Release.Namespace }}:{{ $service_port }}
       timeout_ms: 30000
+{{- $colocatedList := include "get.enabledColocatedSvcList" $main_context | fromYaml }}
+{{- range $skip, $secondary := index $colocatedList . }}
+  {{- $colocConfig := index (include "k10.colocatedServices" . | fromYaml) $secondary }}
+    {{- if $colocConfig.isExposed }}
+      ---
+      apiVersion: ambassador/v1
+      kind:  Mapping
+      name:  {{ $secondary }}-mapping
+      prefix: /{{ $postfix }}/{{ $secondary }}-svc/
+      rewrite: /
+      service: {{ $colocConfig.primary }}-svc.{{ $.Release.Namespace }}:{{ $colocConfig.port }}
+      timeout_ms: 30000
+    {{- end }}
+{{- end }}
+{{- end }}
 spec:
   ports:
   - name: http
     protocol: TCP
     port: {{ $service_port }}
     targetPort: {{ $container_port }}
+{{- $colocatedList := include "get.enabledColocatedSvcList" $main_context | fromYaml }}
+{{- range $skip, $secondary := index $colocatedList . }}
+  {{- $colocConfig := index (include "k10.colocatedServices" . | fromYaml) $secondary }}
+  - name: {{ $secondary }}
+    protocol: TCP
+    port: {{ $colocConfig.port }}
+    targetPort: {{ $colocConfig.port }}
+{{- end }}
 {{- if eq . "logging" }}
   - name: logging
     protocol: TCP
@@ -55,7 +83,8 @@ spec:
   selector:
     run: {{ . }}-svc
 ---
-{{ end -}}
+  {{ end }}{{/* if not (hasKey $colocated_services $k10_service ) */}}
+{{ end -}}{{/* range append (include "k10.restServices" . | splitList " ") "frontend" */}}
 {{- range append (include "k10.services" . | splitList " ") "kanister" }}
 apiVersion: v1
 kind: Service
@@ -85,6 +114,14 @@ spec:
     port: 443
     targetPort: {{ $.Values.injectKanisterSidecar.webhookServer.port }}
   {{- end }}
+{{- $colocatedList := include "get.enabledColocatedSvcList" $main_context | fromYaml }}
+{{- range $skip, $secondary := index $colocatedList . }}
+  {{- $colocConfig := index (include "k10.colocatedServices" . | fromYaml) $secondary }}
+  - name: {{ $secondary }}
+    protocol: TCP
+    port: {{ $colocConfig.port }}
+    targetPort: {{ $colocConfig.port }}
+{{- end }}
   selector:
     run: {{ . }}-svc
 ---

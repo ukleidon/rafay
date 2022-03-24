@@ -1,7 +1,7 @@
 apiVersion: config.kio.kasten.io/v1alpha1
 kind: Policy
 metadata:
-  name: default-backup-policy
+  name: {{ .Values.default_policy_name }}
   namespace: {{ .Release.Namespace }}
 spec:
   comment: default backup policy
@@ -14,7 +14,7 @@ spec:
     backupParameters:
       filters: {}
       profile:
-        name: storagegrid-profile
+        name: {{ .Values.sg_profile_name }}
         namespace: {{ .Release.Namespace }}
   - action: export
     exportParameters:
@@ -22,7 +22,10 @@ spec:
         enabled: true
       frequency: '@hourly'
       profile:
-        name: storagegrid-profile
+        name: {{ .Values.sg_profile_name }}
+        namespace: {{ .Release.Namespace }}
+      blockModeProfile:
+        name: {{ .Values.vbr_profile_name }}
         namespace: {{ .Release.Namespace }}
   selector:
     matchExpressions:

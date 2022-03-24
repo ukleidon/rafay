@@ -11,6 +11,10 @@ metadata:
   name: kopia-tls-cert
   labels:
 {{ include "helm.labels" . | indent 4 }}
+{{- if .Values.global.rhMarketPlace }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+{{- end }}
 data:
   tls.crt: {{ $certKopia.Cert | b64enc }}
 ---
@@ -21,5 +25,9 @@ metadata:
   name: kopia-tls-key
   labels:
 {{ include "helm.labels" . | indent 4 }}
+{{- if .Values.global.rhMarketPlace }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+{{- end }}
 data:
   tls.key: {{ $certKopia.Key | b64enc }}

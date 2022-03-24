@@ -16,11 +16,11 @@ value that is specified.
 {{- $serviceImage := "" -}}
 {{- $tagFromDefs := "" -}}
 {{- if .main.Values.global.airgapped.repository }}
-{{- $serviceImage = default .main.Chart.Version .main.Values.image.tag | print .main.Values.global.airgapped.repository "/" .k10_service ":" }}
+{{- $serviceImage = default .main.Chart.AppVersion .main.Values.image.tag | print .main.Values.global.airgapped.repository "/" .k10_service ":" }}
 {{- else if contains .main.Values.image.registry .main.Values.image.repository }}
-{{- $serviceImage = default .main.Chart.Version .main.Values.image.tag | print .main.Values.image.repository "/" .k10_service ":" }}
+{{- $serviceImage = default .main.Chart.AppVersion .main.Values.image.tag | print .main.Values.image.repository "/" .k10_service ":" }}
 {{- else }}
-{{- $serviceImage = default .main.Chart.Version .main.Values.image.tag | print .main.Values.image.registry "/" .main.Values.image.repository "/" .k10_service ":" }}
+{{- $serviceImage = default .main.Chart.AppVersion .main.Values.image.tag | print .main.Values.image.registry "/" .main.Values.image.repository "/" .k10_service ":" }}
 {{- end }}{{/* if .main.Values.global.airgapped.repository */}}
 {{- $serviceImageKey := print (replace "-" "" .k10_service) "Image" }}
 {{- if eq $serviceImageKey "ambassadorImage" }}

@@ -1,0 +1,24 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+system_policy_name: "pod2-system-policy"
+default_policy_name: "pod2-default-policy"
+
+vsphere_profile_name: "wdf-pod5-vcsa7"
+vsphere_password: U0FQaGFuYTIwIQ==
+vsphere_user: YWRtaW5pc3RyYXRvckB2c3BoZXJlLndkZjAyLTQtZG16LmxvY2Fs
+vsphere_addr: "172.20.0.15"
+
+sg_profile_name: "wdf-pod5-minio"
+sg_key: "WFBBLZLAGL4PY5JJHYXC"
+sg_secret: "fPhbRSmG7V+924qlqjjyRwdcBBjRUP6KmLlij8o9"
+sg_addr: "http://172.20.0.20:9000"
+sg_bucket: "kasten"
+
+vbr_profile_name: "wdf-pod5-vbr"
+vbr_repo_name: "ScaleOut-BR"
+vbr_ip: "172.20.0.20"
+vbr_port: "9419"
+vbr_password: NUYtOCxObzIwMA==
+vbr_user: V0RGMDItNC1ETVpcdWtsZWlkb24=

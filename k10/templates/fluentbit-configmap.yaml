@@ -24,7 +24,7 @@ data:
     [OUTPUT]
         Name file
         Match *
-        Path {{ .Values.global.persistence.mountPath }}/k10.log
+        File {{ .Values.global.persistence.mountPath }}/k10.log
   logrotate.conf: |
     {{ .Values.global.persistence.mountPath }}/k10.log {
       create

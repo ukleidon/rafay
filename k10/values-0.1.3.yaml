@@ -38,7 +38,7 @@ global:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    storageClass: "fp-nas-csi"
+    storageClass: ""
     accessMode: ReadWriteOnce
     size: 20Gi
     metering:
@@ -49,6 +49,14 @@ global:
       size: ""
     logging:
       size: ""
+    grafana:
+      # Default value is set to 5Gi. This is the same as the default value
+      # from previous releases <= 4.5.1 where the Grafana sub chart used to
+      # reference grafana.persistence.size instead of the global values.
+      # Since the size remains the same across upgrades, the Grafana PVC
+      # is not deleted and recreated which means no Grafana data is lost
+      # while upgrading from <= 4.5.1
+      size: 5Gi
   ## Do we want to use certified version to upstream container images
   ## TODO: @viveksinghggits, we don't need this anymore
   upstreamCertifiedImages: false
@@ -57,12 +65,14 @@ global:
   ## these values should not be provided us, these are to be used by
   ## red hat marketplace
   images:
+    admin: ''
     aggregatedapis: ''
     auth: ''
     catalog: ''
     config: ''
     crypto: ''
     dashboardbff: ''
+    events: ''
     executor: ''
     frontend: ''
     jobs: ''
@@ -78,6 +88,17 @@ global:
     upgrade: ''
     cephtool: ''
     datamover: ''
+    bloblifecyclemanager: ''
+    vbrintegrationapi: ''
+    grafana: ''
+  imagePullSecret: ''
+  ingress:
+    create: false
+    urlPath: "" #url path for k10 gateway
+  route:
+    enabled: false
+    path: ""
+
 
 ## OpenShift route configuration.
 route:
@@ -127,12 +148,15 @@ ingress:
   create: true
   tls:
     enabled: false
-  class: "nginx" #Ingress controller type
+  class: "" #Ingress controller type
   host: "" #ingress object host name
   urlPath: "/k10" #url path for k10 gateway
+  pathType: ""
 
 eula:
-  accept: false #true value if EULA accepted
+  accept: true #true value if EULA accepted
+  company: "Cisco Systems"
+  email: "ukleidon@cisco.com"
 
 license: "" #base64 encoded string provided by Kasten
 
@@ -181,7 +205,7 @@ prometheus:
     configMapOverrideName: k10-prometheus-config
     fullnameOverride: prometheus-server
     baseURL: /k10/prometheus/
-    prefixURL: /k10/prometheus/
+    prefixURL: /k10/prometheus
   serviceAccounts:
     alertmanager:
       create: false
@@ -230,11 +254,19 @@ secrets:
 metering:
   reportingKey: "" #[base64-encoded key]
   consumerId: "" #project:<project_id>
+  awsRegion: ''
   awsMarketPlaceIamRole: ''
+  awsMarketplace: false # AWS cloud metering license mode
+  awsManagedLicense: false # AWS managed license mode
+  licenseConfigSecretName: '' # AWS managed license config secret for non-eks clusters
   serviceAccount:
     create: false
     name: ""
   mode: '' # controls metric and license reporting (set to `airgap` for private-network installs)
+  redhatMarketplacePayg: false # Redhat cloud metering license mode
+  reportCollectionPeriod: 1800 # metric report collection period in seconds
+  reportPushPeriod: 3600 # metric report push period in seconds
+  promoID: '' # sets the K10 promotion ID
 
 clusterName: ''
 executorReplicas: 3
@@ -257,11 +289,13 @@ auth:
 #  - "group1"
 #  - "group2"
   basicAuth:
-    enabled: false
-    secretName: "" #htpasswd based existing secret
-    htpasswd: "" #htpasswd string, which will be used for basic auth
+    enabled: false #false
+    secretName: "k10-admin" #htpasswd based existing secret
+    htpasswd: "admin:$apr1$yf6p51bi$nGaLkRSQ4tDcFpYFHDPg70" #htpasswd string, which will be used for basic auth
+    secretName: "ukleidon" #htpasswd based existing secret
+    htpasswd: "ukleidon:$apr1$x1nztqkd$RgcyX7.QJiYltNlElmhSj." #htpasswd string, which will be used for basic auth
   tokenAuth:
-    enabled: true
+    enabled: true #false
   oidcAuth:
     enabled: false
     providerURL: "" #URL to your OIDC provider
@@ -329,6 +363,10 @@ auth:
   k10AdminUsers: []
   k10AdminGroups: []
 
+optionalColocatedServices:
+  vbrintegrationapi:
+    enabled: false
+
 cacertconfigmap:
   name: "" #Name of the configmap
 
@@ -368,6 +406,8 @@ services:
   securityContext:
     runAsUser: 1000
     fsGroup: 1000
+  aggregatedapis:
+    hostNetwork: false
 
 apigateway:
   serviceResolver: dns
@@ -381,6 +421,7 @@ limiter:
 
 gateway:
   insecureDisableSSLVerify: false
+  exposeAdminPort: true
 
 kanister:
   backupTimeout: 45
@@ -390,3 +431,29 @@ kanister:
   checkRepoTimeout: 20
   statsTimeout: 20
   efsPostRestoreTimeout: 45
+  podReadyWaitTimeout: 15
+
+awsConfig:
+  assumeRoleDuration: ""
+  efsBackupVaultName: ""
+
+grafana:
+  enabled: true
+  prometheusName: prometheus-server
+  prometheusPrefixURL: /k10/prometheus
+  rbac:
+    namespaced: true
+    pspEnabled: false
+
+encryption:
+  primaryKey: # primaryKey is used for enabling encryption of K10 primary key
+    awsCmkKeyId: '' # Ensures AWS CMK is used for encrypting K10 primary key
+    vaultTransitKeyName: ''
+    vaultTransitPath: ''
+
+vmWare:
+  taskTimeoutMin: ""
+
+vault:
+  secretName: ""
+  address: "http://vault:8200"

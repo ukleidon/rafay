@@ -1,4 +1,4 @@
-{{- if not .Values.license }}
+{{- if not ( or ( .Values.license ) ( .Values.metering.awsMarketplace ) ( .Values.metering.awsManagedLicense ) ( .Values.metering.licenseConfigSecretName ) ( .Values.metering.redhatMarketplacePayg ) ) }}
 {{- if .Files.Get "triallicense" }}
 apiVersion: v1
 kind: Secret

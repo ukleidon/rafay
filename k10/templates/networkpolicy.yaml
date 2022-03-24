@@ -92,6 +92,7 @@ spec:
     ports:
     - protocol: TCP
       port: {{ .Values.service.aggregatedApiPort }}
+{{- if .Values.gateway.exposeAdminPort }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -115,6 +116,7 @@ spec:
     ports:
     - protocol: TCP
       port: {{ $admin_port }}
+{{- end -}}
 {{- if .Values.injectKanisterSidecar.enabled }}
 ---
 kind: NetworkPolicy
@@ -158,5 +160,33 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
+{{- end -}}
+{{- $mainCtx := . }}
+{{- $colocatedList := include "get.enabledColocatedSvcList" . | fromYaml }}
+{{- range $primary, $secondaryList := $colocatedList }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ $primary }}-svc-allow-secondary-services
+  namespace: {{ $mainCtx.Release.Namespace }}
+  labels:
+{{ include "helm.labels" $mainCtx | indent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      release: {{ $mainCtx.Release.Name }}
+      run: {{ $primary }}-svc
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          release: {{ $mainCtx.Release.Name }}
+    ports:
+  {{- range $skip, $secondary := $secondaryList }}
+  {{- $colocConfig := index (include "k10.colocatedServices" . | fromYaml) $secondary }}
+    - protocol: TCP
+      port: {{ $colocConfig.port }}
+  {{- end -}}
 {{- end -}}
 {{- end -}}

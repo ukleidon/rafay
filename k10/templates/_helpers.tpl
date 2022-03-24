@@ -107,7 +107,11 @@ Create the name of the service account to use
 Create the name of the metering service account to use
 */}}
 {{- define "meteringServiceAccountName" -}}
+{{- if and .Values.metering.awsManagedLicense ( not .Values.serviceAccount.name ) ( not .Values.metering.serviceAccount.name )  ( not .Values.metering.licenseConfigSecretName ) -}}
+    {{ print "k10-metering" }}
+{{- else -}}
     {{ default (include "serviceAccountName" .) .Values.metering.serviceAccount.name }}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -146,7 +150,9 @@ Prometheus scrape config template for k10 services
       {{- else if eq "aggregatedapis" .k10service }}
       - {{ .k10service }}-svc.{{ .main.Release.Namespace }}.svc.{{ .main.Values.cluster.domainName }}:443
       {{- else }}
-      - {{ .k10service }}-svc.{{ .main.Release.Namespace }}.svc.{{ .main.Values.cluster.domainName }}:{{ .main.Values.service.externalPort }}
+      {{- $service := default .k10service (index (include "k10.colocatedServices" . | fromYaml) .k10service).primary }}
+      {{- $port := default .main.Values.service.externalPort (index (include "k10.colocatedServices" . | fromYaml) .k10service).port }}
+      - {{ $service }}-svc.{{ .main.Release.Namespace }}.svc.{{ .main.Values.cluster.domainName }}:{{ $port }}
       {{- end }}
       labels:
         application: {{ .main.Release.Name }}
@@ -375,6 +381,15 @@ Check if Vsphere creds are specified
 {{- end -}}
 
 {{/*
+Check if Vault creds are specified
+*/}}
+{{- define "check.vaultcreds" -}}
+{{- if .Values.vault.secretName -}}
+{{- print true -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Checks and enforces only 1 set of cloud creds is specified
 */}}
 {{- define "enforce.singlecloudcreds" -}}
@@ -401,11 +416,15 @@ Converts .Values.features into k10-features: map[string]: "value"
 
 {{/*
 Returns a license base64 either from file or from values
-or prints it for awsmarketplace
+or prints it for awsmarketplace or awsManagedLicense
 */}}
 {{- define "k10.getlicense" -}}
 {{- if .Values.metering.awsMarketplace -}}
 {{- print "Y3VzdG9tZXJOYW1lOiBhd3MtbWFya2V0cGxhY2UKZGF0ZUVuZDogJzIxMDAtMDEtMDFUMDA6MDA6MDAuMDAwWicKZGF0ZVN0YXJ0OiAnMjAxOC0wOC0wMVQwMDowMDowMC4wMDBaJwpmZWF0dXJlczoKICBjbG91ZE1ldGVyaW5nOiBhd3MKaWQ6IGF3cy1ta3QtNWMxMDlmZDUtYWI0Yy00YTE0LWJiY2QtNTg3MGU2Yzk0MzRiCnByb2R1Y3Q6IEsxMApyZXN0cmljdGlvbnM6IG51bGwKdmVyc2lvbjogdjEuMC4wCnNpZ25hdHVyZTogY3ZEdTNTWHljaTJoSmFpazR3THMwTk9mcTNFekYxQ1pqLzRJMUZVZlBXS0JETHpuZmh2eXFFOGUvMDZxNG9PNkRoVHFSQlY3VFNJMzVkQzJ4alllaGp3cWwxNHNKT3ZyVERKZXNFWVdyMVFxZGVGVjVDd21HczhHR0VzNGNTVk5JQXVseGNTUG9oZ2x2UlRJRm0wVWpUOEtKTzlSTHVyUGxyRjlGMnpnK0RvM2UyTmVnamZ6eTVuMUZtd24xWUNlbUd4anhFaks0djB3L2lqSGlwTGQzWVBVZUh5Vm9mZHRodGV0YmhSUGJBVnVTalkrQllnRklnSW9wUlhpYnpTaEMvbCs0eTFEYzcyTDZXNWM0eUxMWFB1SVFQU3FjUWRiYnlwQ1dYYjFOT3B3aWtKMkpsR0thMldScFE4ZUFJNU9WQktqZXpuZ3FPa0lRUC91RFBtSXFBPT0K" -}}
+{{- else if or ( .Values.metering.awsManagedLicense ) ( .Values.metering.licenseConfigSecretName ) -}}
+{{- print "Y3VzdG9tZXJOYW1lOiBhd3MtdG90ZW0KZGF0ZUVuZDogJzIxMDAtMDEtMDFUMDA6MDA6MDAuMDAwWicKZGF0ZVN0YXJ0OiAnMjAyMS0wOS0wMVQwMDowMDowMC4wMDBaJwpmZWF0dXJlczoKICBleHRlcm5hbExpY2Vuc2U6IGF3cwogIHByb2R1Y3RTS1U6IGI4YzgyMWQ5LWJmNDAtNDE4ZC1iYTBiLTgxMjBiZjc3ZThmOQogIGtleUZpbmdlcnByaW50OiBhd3M6Mjk0NDA2ODkxMzExOkFXUy9NYXJrZXRwbGFjZTppc3N1ZXItZmluZ2VycHJpbnQKaWQ6IGF3cy1leHQtMWUxMTVlZjMtM2YyMC00MTJlLTgzODItMmE1NWUxMTc1OTFlCnByb2R1Y3Q6IEsxMApyZXN0cmljdGlvbnM6CiAgbm9kZXM6ICczJwp2ZXJzaW9uOiB2MS4wLjAKc2lnbmF0dXJlOiBkeEtLN3pPUXdzZFBOY2I1NExzV2hvUXNWeWZSVDNHVHZ0VkRuR1Vvb2VxSGlwYStTY25HTjZSNmdmdmtWdTRQNHh4RmV1TFZQU3k2VnJYeExOTE1RZmh2NFpBSHVrYmFNd3E5UXhGNkpGSmVXbTdzQmdtTUVpWVJ2SnFZVFcyMlNoakZEU1RWejY5c2JBTXNFMUd0VTdXKytITGk0dnhybjVhYkd6RkRHZW5iRE5tcXJQT3dSa3JIdTlHTFQ1WmZTNDFUL0hBMjNZZnlsTU54MGFlK2t5TGZvZXNuK3FKQzdld2NPWjh4eE94bFRJR3RuWDZ4UU5DTk5iYjhSMm5XbmljNVd0OElEc2VDR3lLMEVVRW9YL09jNFhsWVVra3FGQ0xPdVhuWDMxeFZNZ1NFQnVEWExFd3Y3K2RlSmcvb0pMaW9EVHEvWUNuM0lnem9VR2NTMGc9PQo=" -}}
+{{- else if .Values.metering.redhatMarketplacePayg -}}
+{{- print "Y3VzdG9tZXJOYW1lOiByZWRoYXQtbWFya2V0cGxhY2UKZGF0ZUVuZDogJzIxMDAtMDEtMDFUMDA6MDA6MDAuMDAwWicKZGF0ZVN0YXJ0OiAnMjAyMi0wMS0wMVQwMDowMDowMC4wMDBaJwpmZWF0dXJlczoKICBjbG91ZE1ldGVyaW5nOiByZWRoYXQKaWQ6IHJoLW1rdC01YzEwOWZkNS1hYjRjLTRhMTQtYmJjZC01ODcwZTZjOTQzNGIKcHJvZHVjdDogSzEwCnJlc3RyaWN0aW9uczogbnVsbAp2ZXJzaW9uOiB2MS4wLjAKc2lnbmF0dXJlOiBxYlQxUElMd2MwSjFjVUhwcWlLY1IzN0NhTXRqcjcydkZveXZ3NjhXWEFYbnRYZENhQzlGSEVQc1hkRjZCRnllUXZ5M1l4NU9RVDVIbVlZei9GQTEveTUraHZ4TlgvcGpHYTR3aThzL1VVSW9XbW1TdDNXWUhJWVZNU2RmeEtyeGtiNTIzUk1ZbDArK3VHaGpoODRkdCtZZ1A4N2dyNmMrRHRrZ21EU3FlQk44L09obksxUHVCUTAzNDJCL1U1ZjBwcjArVnVBcHp6bmJBUnJzUW5WYkthUHd2UVRzMUNZUUR3bFZuM210KzBHbkdQdlNmblR4UEg4RzJTK3cyRWh0SkgxL1Vrd3o2VDd2L0dHMXlZNUU0UmluNWlCSmRmODlDcmIxSUZHK2x4SHhYQ1g1RENWZjlTSTdYanZ4dE9mdXoxYzhwK3k3MERZYm9sbFU5ZmF1dlE9PQo=" -}}
 {{- else -}}
 {{- print (default (.Files.Get "license") .Values.license) -}}
 {{- end -}}
@@ -465,3 +484,162 @@ KanisterPodCustomLabels: {{ .Values.kanisterPodCustomLabels | quote }}
 KanisterPodCustomAnnotations: {{ .Values.kanisterPodCustomAnnotations | quote }}
 {{- end }}
 {{- end }}
+
+{{/*
+Lookup and return only enabled colocated services
+*/}}
+{{- define "get.enabledColocatedSvcList" -}}
+{{- $enabledColocatedSvcList := dict }}
+{{- $colocatedList := include "k10.colocatedServiceLookup" . | fromYaml }}
+{{- range $primary, $secondaryList := $colocatedList }}
+  {{- $enabledSecondarySvcList := list }}
+  {{- range $skip, $secondary := $secondaryList }}
+    {{- if or (not (hasKey $.Values.optionalColocatedServices $secondary)) ((index $.Values.optionalColocatedServices $secondary).enabled) }}
+      {{- $enabledSecondarySvcList = append $enabledSecondarySvcList $secondary }}
+    {{- end }}
+  {{- end }}
+  {{- if gt (len $enabledSecondarySvcList) 0 }}
+    {{- $enabledColocatedSvcList = set $enabledColocatedSvcList $primary $enabledSecondarySvcList }}
+  {{- end }}
+{{- end }}
+{{- $enabledColocatedSvcList | toYaml | trim | nindent 0}}
+{{- end -}}
+
+{{- define "get.serviceContainersInPod" -}}
+{{- $podService := .k10_service_pod }}
+{{- $colocatedList := include "k10.colocatedServices" . | fromYaml }}
+{{- $colocatedLookupByPod := include "get.enabledColocatedSvcList" .main | fromYaml }}
+{{- $containerList := list $podService }}
+{{- if hasKey $colocatedLookupByPod $podService }}
+  {{- $containerList = concat $containerList (index $colocatedLookupByPod $podService)}}
+{{- end }}
+{{- $containerList | join " " }}
+{{- end -}}
+
+{{- define "get.statefulRestServicesInPod" -}}
+{{- $statefulRestSvcsInPod := list }}
+{{- $podService := .k10_service_pod }}
+{{- $containerList := (dict "main" .main "k10_service_pod" $podService | include "get.serviceContainersInPod" | splitList " ") }}
+{{- if .main.Values.global.persistence.enabled }}
+  {{- range $skip, $containerInPod := $containerList }}
+    {{- $isRestService := has $containerInPod (include "k10.restServices" . | splitList " ") }}
+    {{- $isStatelessService := has $containerInPod (include "k10.statelessServices" . | splitList " ") }}
+    {{- if and $isRestService (not $isStatelessService) }}
+      {{- $statefulRestSvcsInPod = append $statefulRestSvcsInPod $containerInPod }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $statefulRestSvcsInPod | join " " }}
+{{- end -}}
+
+{{- define "k10.ingressPath" -}}
+    {{- if and .Values.global.ingress.create .Values.global.route.enabled -}}
+        {{  fail "Either enable ingress or route"}}
+    {{- end -}}
+    {{- if .Values.global.ingress.create -}}
+        {{ if .Values.global.ingress.urlPath }}
+            {{- print .Values.global.ingress.urlPath -}}
+        {{ else }}
+            {{- print .Release.Name -}}
+        {{- end -}}
+    {{- else if .Values.global.route.enabled -}}
+        {{ if .Values.global.route.path }}
+            {{- print .Values.global.route.path -}}
+         {{ else }}
+            {{- print .Release.Name -}}
+        {{- end -}}
+     {{ else }}
+            {{- print .Release.Name -}}
+    {{- end -}}
+{{- end -}}
+
+
+{{/*
+Check if encryption keys are specified
+*/}}
+{{- define "check.primaryKey" -}}
+{{- if (or .Values.encryption.primaryKey.awsCmkKeyId .Values.encryption.primaryKey.vaultTransitKeyName) -}}
+{{- print true -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "check.validateMonitoringProperties" -}}
+{{- include "check.monitoringPrefix" . -}}
+{{- include "check.monitoringFullNameOverride" . -}}
+{{- end -}}
+
+{{- define "check.monitoringPrefix" -}}
+{{- if eq .Values.prometheus.server.enabled .Values.grafana.enabled -}}
+{{- if not (eq .Values.prometheus.server.prefixURL .Values.grafana.prometheusPrefixURL) -}}
+{{ fail "Prometheus and Grafana prefixURL should match. Please check values of prometheus.server.prefixURL and grafana.prometheusPrefixURL" }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "check.monitoringFullNameOverride" -}}
+{{- if eq .Values.prometheus.server.enabled .Values.grafana.enabled -}}
+{{- if not (eq .Values.prometheus.server.fullnameOverride .Values.grafana.prometheusName) -}}
+{{ fail "The Prometheus name overrides must match. Please check values of prometheus.server.fullnameOverride and grafana.prometheusName" }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "check.validateImagePullSecrets" -}}
+    {{/* Validate image pull secrets if a custom Docker config is provided */}}
+    {{- if (or .Values.secrets.dockerConfig .Values.secrets.dockerConfigPath ) -}}
+	{{- if (and .Values.grafana.enabled (not .Values.global.imagePullSecret) (not .Values.grafana.image.pullSecrets)) -}}
+	    {{ fail "A custom Docker config was provided, but Grafana is not configured to use it. Please check that global.imagePullSecret is set correctly." }}
+	{{- end -}}
+	{{- if (and .Values.prometheus.server.enabled (not .Values.global.imagePullSecret) (not .Values.prometheus.imagePullSecrets)) -}}
+	    {{ fail "A custom Docker config was provided, but Prometheus is not configured to use it. Please check that global.imagePullSecret is set correctly." }}
+	{{- end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- define "k10.imagePullSecrets" }}
+{{- $imagePullSecrets := list .Values.global.imagePullSecret }}{{/* May be empty, but the compact below will handle that */}}
+{{- if (or .Values.secrets.dockerConfig .Values.secrets.dockerConfigPath) }}
+  {{- $imagePullSecrets = concat $imagePullSecrets (list "k10-ecr") }}
+{{- end }}
+{{- $imagePullSecrets = $imagePullSecrets | compact | uniq }}
+
+{{- if $imagePullSecrets }}
+imagePullSecrets:
+  {{- range $imagePullSecrets }}
+  {{/* Check if the name is not empty string */}}
+  - name: {{ . }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Below helper template functions are referred from chart
+https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/templates/_helpers.tpl
+*/}}
+
+{{/*
+Return kubernetes version
+*/}}
+{{- define "k10.kubeVersion" -}}
+  {{- default .Capabilities.KubeVersion.Version (regexFind "v[0-9]+\\.[0-9]+\\.[0-9]+" .Capabilities.KubeVersion.Version) -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for ingress.
+*/}}
+{{- define "ingress.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">= 1.19.x" (include "k10.kubeVersion" .)) -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else if .Capabilities.APIVersions.Has "extensions/v1beta1" -}}
+    {{- print "extensions/v1beta1" -}}
+  {{- else -}}
+    {{- print "networking.k8s.io/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Is ingress part of stable APIVersion.
+*/}}
+{{- define "ingress.isStable" -}}
+  {{- eq (include "ingress.apiVersion" .) "networking.k8s.io/v1" -}}
+{{- end -}}

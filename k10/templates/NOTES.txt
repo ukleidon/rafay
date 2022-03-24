@@ -30,3 +30,18 @@ And use it in following URL
  `http://SERVICE_EXTERNAL_IP/{{ .Release.Name }}/#/`
 {{ end }}
 {{ end }}
+
+{{ if and ( .Values.metering.awsManagedLicense )  ( not .Values.metering.licenseConfigSecretName ) }}
+
+IAM Role created during installation need to have permissions that allow K10 to
+perform operations on EBS and, if needed, EFS and S3. Please create a policy
+with required permissions, and use the commands below to attach the policy to
+the service account.
+
+`ROLE_NAME=$(kubectl get serviceaccount {{ .Values.serviceAccount.name }} -n {{ .Release.Namespace }} -ojsonpath="{.metadata.annotations['eks\.amazonaws\.com/role-arn']}" | awk -F '/' '{ print $(NF) }')`
+`aws iam attach-role-policy --role-name "${ROLE_NAME}" --policy-arn <POLICY NAME>`
+
+Refer to `https://docs.kasten.io/latest/install/aws-containers-anywhere/aws-containers-anywhere.html#attaching-permissions-for-eks-installations`
+for more information.
+
+{{ end }}

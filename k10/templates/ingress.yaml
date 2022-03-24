@@ -1,6 +1,8 @@
+{{- $ingressApiIsStable := eq (include "ingress.isStable" .) "true" -}}
+{{- $service_port := .Values.service.externalPort -}}
 {{ if .Values.ingress.create }}
 {{ include "authEnabled.check" . }}
-apiVersion: extensions/v1beta1
+apiVersion: {{ template "ingress.apiVersion" . }}
 kind: Ingress
 metadata:
   labels:
@@ -27,9 +29,17 @@ spec:
   - http:
       paths:
         - path: /{{ default .Release.Name .Values.ingress.urlPath | trimPrefix "/" | trimSuffix "/" }}/
+          pathType: {{ default "ImplementationSpecific" .Values.ingress.pathType }}
           backend:
+            {{- if $ingressApiIsStable }}
+            service:
+              name: gateway
+              port:
+                number: {{ $service_port }}
+            {{- else }}
             serviceName: gateway
-            servicePort: http
+            servicePort: {{ $service_port }}
+            {{- end }}
     {{- if .Values.ingress.host }}
     host: {{ .Values.ingress.host }}
     {{- end }}

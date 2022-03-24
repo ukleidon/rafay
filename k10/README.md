@@ -55,6 +55,7 @@ Parameter | Description | Default
 `scc.create` | Whether to create a SecurityContextConstraints for K10 ServiceAccounts  | `false`
 `services.dashboardbff.hostNetwork` | Whether the dashboardbff pods may use the node network | `false`
 `services.executor.hostNetwork` | Whether the executor pods may use the node network | `false`
+`services.aggregatedapis.hostNetwork` | Whether the aggregatedapis pods may use the node network | `false`
 `serviceAccount.create`| Specifies whether a ServiceAccount should be created | `true`
 `serviceAccount.name` | The name of the ServiceAccount to use. If not set, a name is derived using the release and chart names. | `None`
 `ingress.create` | Specifies whether the K10 dashboard should be exposed via ingress | `false`
@@ -64,6 +65,7 @@ Parameter | Description | Default
 `ingress.annotations` | Additional Ingress object annotations | `{}`
 `ingress.tls.enabled` | Configures a TLS use for `ingress.host` | `false`
 `ingress.tls.secretName` | Specifies a name of TLS secret | `None`
+`ingress.pathType` | Specifies the path type for the ingress resource | `ImplementationSpecific`
 `global.persistence.enabled` | Use PVS to persist data | `true`
 `global.persistence.size` | Default global size of volumes for K10 persistent services  | `20Gi`
 `global.persistence.catalog.size` | Size of a volume for catalog service  | `global.persistence.size`
@@ -72,6 +74,7 @@ Parameter | Description | Default
 `global.persistence.metering.size` | Size of a volume for metering service  | `global.persistence.size`
 `global.persistence.storageClass` | Specified StorageClassName will be used for PVCs | `None`
 `global.airgapped.repository` | Specify the helm repository for offline (airgapped) installation | `''`
+`global.imagePullSecret` | Provide secret which contains docker config for private repository. Use `k10-ecr` when secrets.dockerConfigPath is used. | `''`
 `secrets.awsAccessKeyId` | AWS access key ID (required for AWS deployment) | `None`
 `secrets.awsSecretAccessKey` | AWS access key secret | `None`
 `secrets.awsIamRole` | ARN of the AWS IAM role assumed by K10 to perform any AWS operation. | `None`
@@ -90,7 +93,15 @@ Parameter | Description | Default
 `secrets.dockerConfigPath` | Use --set-file secrets.dockerConfigPath=path_to_docker_config.yaml to specify docker config for image pull | `None`
 `cacertconfigmap.name` | Name of the ConfigMap that contains a certificate for a trusted root certificate authority | `None`
 `clusterName` | Cluster name for better logs visibility | `None`
+`metering.awsRegion` | Sets AWS_REGION for metering service | `None`
 `metering.mode` | Control license reporting (set to `airgap` for private-network installs) | `None`
+`metering.reportCollectionPeriod` | Sets metric report collection period (in seconds) | `1800`
+`metering.reportPushPeriod` | Sets metric report push period (in seconds) | `3600`
+`metering.promoID` | Sets K10 promotion ID from marketing campaigns | `None`
+`metering.awsMarketplace` | Sets AWS cloud metering license mode | `false`
+`metering.awsManagedLicense` | Sets AWS managed license mode | `false`
+`metering.redhatMarketplacePayg` | Sets Red Hat cloud metering license mode | `false`
+`metering.licenseConfigSecretName` | Sets AWS managed license config secret | `None`
 `externalGateway.create` | Configures an external gateway for K10 API services | `false`
 `externalGateway.annotations` | Standard annotations for the services | `None`
 `externalGateway.fqdn.name` | Domain name for the K10 API services | `None`
@@ -119,7 +130,7 @@ Parameter | Description | Default
 `auth.openshift.dashboardURL` | The URL used for accessing K10's dashboard | `None`
 `auth.openshift.openshiftURL` | The URL for accessing OpenShift's API server | `None`
 `auth.openshift.insecureCA` | To turn off SSL verification of connections to OpenShift | `false`
-`auth.openshift.useServiceAccountCA` | Set this to true to use the CA certificate corresponding to the Service Account ``auth.openshift.serviceAccount`` usually found at ``/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`` | `false`
+`auth.openshift.useServiceAccountCA` | Set this to true to use the CA certificate corresponding to the Service Account ``auth.openshift.serviceAccount`` usually found at ``/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`` | `false`
 `auth.ldap.enabled` | Configures Active Directory/LDAP based authentication for the K10 dashboard | `false`
 `auth.ldap.restartPod` | To force a restart of the authentication service pod (useful when updating authentication config) | `false`
 `auth.ldap.dashboardURL` | The URL used for accessing K10's dashboard | `None`
@@ -153,6 +164,7 @@ Parameter | Description | Default
 `injectKanisterSidecar.objectSelector.matchLabels` | Set of labels to filter workload objects in which the sidecar is injected | `{}`
 `injectKanisterSidecar.webhookServer.port` | Port number on which the mutating webhook server accepts request | `8080`
 `gateway.insecureDisableSSLVerify` | Specifies whether to disable SSL verification for gateway pods | `false`
+`gateway.exposeAdminPort` | Specifies whether to expose Admin port for gateway service | `true`
 `genericVolumeSnapshot.resources.[requests\|limits].[cpu\|memory]` | Resource requests and limits for Generic Volume Snapshot restore pods | `{}`
 `prometheus.server.enabled` | If false, K10 Prometheus server will not be created. k10 dashboard will not function properly if this option is set to false | `true`
 `prometheus.server.persistentVolume.enabled` | If true, K10 Prometheus server will create a Persistent Volume Claim | `true`
@@ -161,6 +173,8 @@ Parameter | Description | Default
 `prometheus.server.retention` | (optional) K10 Prometheus data retention | `"30d"`
 `prometheus.server.baseURL` | (optional) K10 Prometheus external url path at which the server can be accessed | `/k10/prometheus/`
 `prometheus.server.prefixURL` | (optional) K10 Prometheus prefix slug at which the server can be accessed | `/k10/prometheus/`
+`grafana.enabled` | (optional) If false Grafana will not be available | `true`
+`grafana.prometheusPrefixURL` | (optional) URL for Prometheus datasource in Grafana (must match `prometheus.server.prefixURL`) | `/k10/prometheus/`
 `resources.<podName>.<containerName>.[requests\|limits].[cpu\|memory]` | Overwrite default K10 [container resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) | varies by container
 `route.enabled` | Specifies whether the K10 dashboard should be exposed via route | `false`
 `route.host` | FQDN (e.g., `.k10.example.com`) for name-based virtual host | `""`
@@ -184,7 +198,10 @@ Parameter | Description | Default
 `kanister.checkRepoTimeout` | Specifies timeout to set on Kanister checkRepo operations | `20`
 `kanister.statsTimeout` | Specifies timeout to set on Kanister stats operations | `20`
 `kanister.efsPostRestoreTimeout` | Specifies timeout to set on Kanister efsPostRestore operations | `45`
-
+`awsConfig.assumeRoleDuration` | Duration of a session token generated by AWS for an IAM role. The minimum value is 15 minutes and the maximum value is the maximum duration setting for that IAM role. For documentation about how to view and edit the maximum session duration for an IAM role see https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use.html#id_roles_use_view-role-max-session. The value accepts a number along with a single character ``m``(for minutes) or ``h`` (for hours)  Examples: 60m or 2h | `''`
+`awsConfig.efsBackupVaultName` | Specifies the AWS EFS backup vault name | `k10vault`
+`vmWare.taskTimeoutMin` | Specifies the timeout for VMWare operations | `60`
+`encryption.primaryKey.awsCmkKeyId` | Specifies the AWS CMK key ID for encrypting K10 Primary Key | `None`
 ## Helm tips and tricks
 
 There is a way of setting values via a yaml file instead of using `--set`.

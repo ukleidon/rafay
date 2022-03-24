@@ -1,9 +1,9 @@
 apiVersion: v2
 name: k10-configuration
 type: application
-version: 0.1.0
-appVersion: "21.04.0"
-kubeVersion: '>= 1.16.0 < 1.22.0'
+version: 0.1.1
+appVersion: "4.5.9"
+kubeVersion: '>= 1.19.0 < 1.22.0'
 description: A Helm chart for configuring Kasten K10 
 keywords:
 - Kasten

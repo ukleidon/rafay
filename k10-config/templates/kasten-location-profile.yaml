@@ -12,7 +12,7 @@ stringData:
 apiVersion: config.kio.kasten.io/v1alpha1
 kind: Profile
 metadata:
-  name: storagegrid-profile
+  name: {{ .Values.sg_profile_name }}
   namespace: {{ .Release.Namespace }}
 spec:
   type: Location
@@ -29,6 +29,6 @@ spec:
       name: {{ .Values.sg_bucket }}
       endpoint: {{ .Values.sg_addr }}
       objectStoreType: S3
-      region: us-east-1
+#      region: us-east-1
       skipSSLVerify: true
 

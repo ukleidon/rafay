@@ -1,0 +1,28 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+system_policy_name: "ntap-system-policy"
+default_policy_name: "ntap-default-policy"
+
+vsphere_profile_name: "ntap-wdf-vcsa7"
+vsphere_password: "U0FQaGFuYTIwIQ=="
+vsphere_user: "YWRtaW5pc3RyYXRvckB2c3BoZXJlLmxvY2Fs"
+vsphere_addr: "172.28.0.200"
+
+sg_profile_name: "ntap-wdf-storagegrid"
+sg_key: "2J7MWBPWLJI37VJTK9Q0"
+sg_secret: "xE0EhF/Z0AYe5sOcGGqEw2LvsajxOTm7lG35gAgb"
+sg_addr: "s3.ntap-wdf.local:10443"
+sg_bucket: "k10"
+
+vbr_profile_name: "ntap-wdf-vbr"
+vbr_repo_name: "ScaleOut-BR"
+vbr_ip: "172.28.0.20"
+vbr_port: "9419"
+vbr_password: NUYtOCxObzIwMA==
+vbr_user: V0RGMDItNC1ETVpcdWtsZWlkb24=

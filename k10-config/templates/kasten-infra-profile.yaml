@@ -12,7 +12,7 @@ data:
 apiVersion: config.kio.kasten.io/v1alpha1
 kind: Profile
 metadata:
-  name: vsphere-pod6-profile
+  name: {{ .Values.vsphere_profile_name }}
   namespace: {{ .Release.Namespace }}
 spec:
   type: Infra

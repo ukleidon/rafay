@@ -1,0 +1,29 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+system_policy_name: "op-system-policy"
+default_policy_name: "op-default-policy"
+
+vsphere_profile_name: "op-vcsa7"
+vsphere_user: "YWRtaW5pc3RyYXRvckBmbGV4cG9kLmxvY2Fs"
+vsphere_password: "U0FQaGFuYTIwIQ=="
+vsphere_addr: "10.10.50.100"
+
+sg_profile_name: "op-storagegrid"
+sg_key: "Q2CVMW9DA1EICW4SR62B"
+sg_secret: "6owRuzyhJE9pS3reLBJDs1AB28d2omZnfryypUHb"
+sg_addr: "s3.flexpod.local:10443"
+sg_bucket: "backup"
+
+vbr_profile_name: "op-vbr"
+vbr_repo_name: "ScaleOut-BR"
+vbr_ip: "10.20.0.20"
+vbr_port: "9419"
+vbr_password: NUYtOCxObzIwMA==
+vbr_user: V0RGMDItNC1ETVpcdWtsZWlkb24=

@@ -200,6 +200,9 @@
                 "awsMarketPlaceIamRole": {
                     "type": "string"
                 },
+                "awsRegion": {
+                    "type": "string"
+                },
                 "serviceAccount": {
                     "type": "object",
                     "properties": {
@@ -210,6 +213,21 @@
                             "type": "string"
                         }
                     }
+                },
+                "licenseConfigSecretName": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "reportCollectionPeriod": {
+                    "type": "integer"
+                },
+                "reportPushPeriod": {
+                    "type": "integer"
+                },
+                "promoID": {
+                    "type": "string"
                 }
             }
         },

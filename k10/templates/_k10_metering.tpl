@@ -100,10 +100,7 @@ spec:
       securityContext:
 {{ toYaml .Values.services.securityContext | indent 8 }}
       serviceAccountName: {{ template "meteringServiceAccountName" . }}
-{{- if or .Values.secrets.dockerConfig .Values.secrets.dockerConfigPath }}
-      imagePullSecrets:
-        - name: k10-ecr
-{{- end }}
+      {{- include "k10.imagePullSecrets" . | indent 6 }}
 {{- if $.stateful }}
       initContainers:
       - name: upgrade-init
@@ -178,6 +175,8 @@ spec:
             value: "/tmp/reports/k10"
           - name: GRACE_PERIOD_STORE
             value: /tmp/reports/clustergraceperiod
+          - name: NODE_USAGE_STORE
+            value: /tmp/reports/node_usage_history
 {{- end }}
 {{- if eq "true" (include "overwite.kanisterToolsImage" .) }}
           - name: KANISTER_TOOLS
@@ -186,9 +185,25 @@ spec:
                 name: k10-config
                 key: overwriteKanisterTools
 {{- end }}
+{{- if .Values.metering.awsRegion }}
+          - name: AWS_REGION
+            value: {{ .Values.metering.awsRegion }}
+{{- end }}
 {{- if .Values.metering.mode }}
           - name: K10REPORTMODE
             value: {{ .Values.metering.mode }}
+{{- end }}
+{{- if .Values.metering.reportCollectionPeriod }}
+          - name: K10_REPORT_COLLECTION_PERIOD
+            value: {{ .Values.metering.reportCollectionPeriod  | quote }}
+{{- end }}
+{{- if .Values.metering.reportPushPeriod }}
+          - name: K10_REPORT_PUSH_PERIOD
+            value: {{ .Values.metering.reportPushPeriod | quote }}
+{{- end }}
+{{- if .Values.metering.promoID }}
+          - name: K10_PROMOTION_ID
+            value: {{ .Values.metering.promoID }}
 {{- end }}
 {{- if .Values.reportingSecret }}
           - name: AGENT_CONSUMER_ID
@@ -204,12 +219,25 @@ spec:
           - name: K10_RELEASE_NAME
             value: {{ .Release.Name }}
 {{- end }}
+{{- if .Values.metering.licenseConfigSecretName }}
+          - name: AWS_WEB_IDENTITY_REFRESH_TOKEN_FILE
+            value: "/var/run/secrets/product-license/license_token"
+          - name: AWS_ROLE_ARN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.metering.licenseConfigSecretName }}
+                key: iam_role
+{{- end }}
         volumeMounts:
         - name: meter-config
           mountPath: /var/ubbagent
 {{- if $.stateful }}
         - name: {{ $service }}-persistent-storage
           mountPath: /var/reports/
+{{- end }}
+{{- if .Values.metering.licenseConfigSecretName }}
+        - name: awsmp-product-license
+          mountPath: "/var/run/secrets/product-license"
 {{- end }}
       volumes:
         - name: meter-config
@@ -222,6 +250,11 @@ spec:
         - name: {{ $service }}-persistent-storage
           persistentVolumeClaim:
             claimName: {{ $service }}-pv-claim
+{{- end }}
+{{- if .Values.metering.licenseConfigSecretName }}
+        - name: awsmp-product-license
+          secret:
+            secretName: {{ .Values.metering.licenseConfigSecretName }}
 {{- end }}
 ---
 {{- end }}{{/* with .main */}}

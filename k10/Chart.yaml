@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 4.0.6
+appVersion: 4.5.9
 description: Kasten’s K10 Data Management Platform
 home: https://kasten.io/
 icon: https://docs.kasten.io/_static/kasten.png
@@ -7,4 +7,4 @@ maintainers:
 - email: support@kasten.io
   name: kastenIO
 name: k10
-version: 4.0.6
+version: 4.5.9

@@ -1,3 +1,9 @@
+{{ $scrape_services := (include "k10.restServices" . | splitList " " ) }}
+{{- if .Values.gateway.exposeAdminPort -}}
+  {{- $scrape_services = append (include "k10.restServices" . | splitList " " ) "gateway" -}}
+{{- end -}}
+
+{{- include "check.validateMonitoringProperties" .}}
 {{- if .Values.prometheus.server.enabled -}}
 {{- $rbac := .Values.prometheus.rbac.create -}}
 kind: ConfigMap
@@ -14,9 +20,11 @@ data:
       scrape_timeout: 10s
       evaluation_interval: 1m
     scrape_configs:
-{{- range append (include "k10.restServices" . | splitList " ") "gateway" }}
+{{- range $scrape_services -}}
+{{- if or (not (hasKey $.Values.optionalColocatedServices .)) (index $.Values.optionalColocatedServices .).enabled }}
 {{ $tmpcontx := dict "main" $ "k10service" . -}}
 {{ include "k10.prometheusScrape" $tmpcontx | indent 6 -}}
+{{- end }}
 {{- end }}
 {{- range include "k10.services" . | splitList " " }}
 {{- if (or (ne . "aggregatedapis") ($rbac)) }}

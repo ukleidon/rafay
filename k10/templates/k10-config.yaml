@@ -10,7 +10,7 @@ data:
   {{- if .Values.clusterName }}
   clustername: {{ quote .Values.clusterName }}
   {{- end }}
-  version: {{ .Chart.Version }}
+  version: {{ .Chart.AppVersion }}
   multiClusterVersion: {{ include "k10.multiClusterVersion" . | quote }}
   modelstoredirname: "//mnt/k10state/kasten-io/"
   apiDomain: {{ include "apiDomain" . }}
@@ -22,6 +22,7 @@ data:
   k10DataStoreRestoreContentCacheSizeMB: {{ include "k10.defaultK10DataStoreRestoreContentCacheSizeMB" . | quote }}
   k10DataStoreRestoreMetadataCacheSizeMB: {{ include "k10.defaultK10DataStoreRestoreMetadataCacheSizeMB" . | quote }}
   K10BackupBufferFileHeadroomFactor: {{ include "k10.defaultK10BackupBufferFileHeadroomFactor" . | quote }}
+  AWSAssumeRoleDuration: {{ default (include "k10.defaultAssumeRoleDuration" .) .Values.awsConfig.assumeRoleDuration | quote }}
   KanisterBackupTimeout: {{ default (include "k10.defaultKanisterBackupTimeout" .) .Values.kanister.backupTimeout | quote }}
   KanisterRestoreTimeout: {{ default (include "k10.defaultKanisterRestoreTimeout" .) .Values.kanister.restoreTimeout | quote }}
   KanisterDeleteTimeout: {{ default (include "k10.defaultKanisterDeleteTimeout" .) .Values.kanister.deleteTimeout | quote }}
@@ -29,6 +30,7 @@ data:
   KanisterCheckRepoTimeout: {{ default (include "k10.defaultKanisterCheckRepoTimeout" .) .Values.kanister.checkRepoTimeout | quote }}
   KanisterStatsTimeout: {{ default (include "k10.defaultKanisterStatsTimeout" .) .Values.kanister.statsTimeout | quote }}
   KanisterEFSPostRestoreTimeout: {{ default (include "k10.defaultKanisterEFSPostRestoreTimeout" .) .Values.kanister.efsPostRestoreTimeout | quote }}
+  KanisterPodReadyWaitTimeout: {{ .Values.kanister.podReadyWaitTimeout | quote }}
   K10MutatingWebhookTLSCertDir: "/etc/ssl/certs/webhook"
 
   K10LimiterGenericVolumeSnapshots: {{ default (include "k10.defaultK10LimiterGenericVolumeSnapshots" .) .Values.limiter.genericVolumeSnapshots | quote }}
@@ -36,6 +38,14 @@ data:
   K10LimiterGenericVolumeRestores: {{ default (include "k10.defaultK10LimiterGenericVolumeRestores" .) .Values.limiter.genericVolumeRestores | quote }}
   K10LimiterCsiSnapshots: {{ default (include "k10.defaultK10LimiterCsiSnapshots" .) .Values.limiter.csiSnapshots | quote }}
   K10LimiterProviderSnapshots: {{ default (include "k10.defaultK10LimiterProviderSnapshots" .) .Values.limiter.providerSnapshots | quote }}
+
+  {{- if .Values.awsConfig.efsBackupVaultName }}
+  efsBackupVaultName: {{ quote .Values.awsConfig.efsBackupVaultName }}
+  {{- end }}
+
+  {{- if .Values.vmWare.taskTimeoutMin }}
+  vmWareTaskTimeoutMin: {{ quote .Values.vmWare.taskTimeoutMin }}
+  {{- end }}
 
 {{- include "get.kanisterPodCustomLabels" . | indent 2}}
 {{- include "get.kanisterPodCustomAnnotations" . | indent 2}}
@@ -135,7 +145,7 @@ data:
         redirectURI: {{ printf "%s/dex/callback" (trimSuffix "/" .Values.auth.openshift.dashboardURL) }}
         insecureCA: {{ .Values.auth.openshift.insecureCA }}
 {{- if and (eq (include "check.cacertconfigmap" .) "false") .Values.auth.openshift.useServiceAccountCA }}
-        rootCA: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+        rootCA: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 {{- end }}
     oauth2:
       skipApprovalScreen: true
